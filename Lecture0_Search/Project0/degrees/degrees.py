@@ -1,7 +1,7 @@
 import csv
 import sys
 
-from util import Node, StackFrontier, QueueFrontier
+from util import Node, StackFrontier, QueueFrontier, Star_Node
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -91,39 +91,47 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
-    frontier = QueueFrontier() # BFS
+    openned, closed = [], []
     num_explored = 0
-    explored = set()
+    #explored = set()
     #start_id, goal_id = get_input()
 
-    start = Node(state=source, action=None, parent=None)
-    frontier.add(start)
-
+    start_node = Star_Node(state=int(source), action=None, parent=None)
+    goal_node = Star_Node(state=int(target))
+    openned.append(start_node)
     solutions = []
 
-    while True:
-        if frontier.empty():
-            print('Frontier is empty. No solution')
-            return None
-        
-        node = frontier.remove()
+    while len(openned) > 0:        
+        current_node = openned.pop(0)
+        closed.append(current_node)
         num_explored += 1
         
-        if node.state == target:
-            while node.parent is not None:
-                movie_id = node.action
-                person_id = node.state
-                solutions.append((movie_id, person_id))
-                node = node.parent
-            solutions.reverse()
-            return solutions
+        if current_node == goal_node:
+            while current_node != start_node:
+                movie_id = int(current_node.action)
+                person_id = current_node.state
+                solutions.append((str(movie_id), str(person_id)))
+                current_node = current_node.parent
+            return solutions[::-1]
         
-        explored.add(node.state)
+        #explored.add(node.state)
         
-        for action, state in neighbors_for_person(node.state):
-            if state not in explored:
-                child = Node(state=state, parent=node, action=action)
-                frontier.add(child)
+        for action, state in neighbors_for_person(str(current_node.state)):
+            action = int(action)
+            state = int(state)
+            child = Star_Node(state=state, parent=current_node, action=action)
+            if child in closed: continue
+            
+            # Manhattan Distance
+            child.g = abs(child.state - start_node.state) #+ abs(child.action - start_node.action)
+            child.h = abs(child.state - goal_node.state) #+ abs(child.action - goal_node.action)
+            child.f = child.g + child.h
+            
+            for node in openned:
+                if child == node and child.f >= node.f:
+                    break
+            else:
+                openned.append(child)
     # TODO
     raise NotImplementedError
 
